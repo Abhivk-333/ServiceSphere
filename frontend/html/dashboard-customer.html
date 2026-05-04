@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .search-bar{display:flex;gap:.75rem;margin-bottom:2rem}
+    .search-bar input{flex:1;padding:.85rem 1.25rem;border:1px solid var(--border-color);border-radius:999px;font-size:.9rem;outline:none;transition:var(--transition)}
+    .search-bar input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+    .cat-chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:2rem}
+    .chip{padding:.45rem 1rem;border-radius:999px;border:1px solid var(--border-color);font-size:.8rem;font-weight:500;cursor:pointer;transition:var(--transition);background:#fff}
+    .chip:hover,.chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem}
+    .rec-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.25rem;transition:var(--transition);cursor:pointer}
+    .rec-card:hover{box-shadow:var(--shadow-lg);border-color:rgba(79,70,229,.2);transform:translateY(-3px)}
+    .rec-card .top{display:flex;align-items:center;gap:.85rem;margin-bottom:.85rem}
+    .rec-card .avatar{width:48px;height:48px;border-radius:50%;object-fit:cover}
+    .rec-card .name{font-weight:700;font-size:.9rem}
+    .rec-card .cat{font-size:.75rem;color:var(--text-muted)}
+    .rec-card .rating{display:flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:600;color:#eab308}
+    .rec-card .price{font-size:.85rem;font-weight:700;color:var(--primary);margin-top:.5rem}
+    .rec-card .svc-name{font-size:.82rem;color:var(--text-muted)}
+    .bookings-section h3{font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+    .booking-row{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:.6rem;transition:var(--transition)}
+    .booking-row:hover{box-shadow:var(--shadow-sm)}
+    .booking-info .bk-title{font-weight:600;font-size:.88rem}
+    .booking-info .bk-meta{font-size:.78rem;color:var(--text-muted)}
+    .welcome-banner{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-radius:var(--radius-lg);padding:2rem 2.5rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between}
+    .welcome-banner h2{font-size:1.5rem;font-weight:700}
+    .welcome-banner p{opacity:.85;margin-top:.3rem;font-size:.9rem}
+    @media(max-width:768px){.rec-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Customer</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item active"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444" onclick="SS.logout()"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="dashboard-header">
+      <div><h1 style="font-size:1.6rem;font-weight:700" id="greeting">Good evening, Ananya</h1><p class="text-muted" style="font-size:.85rem">Here's what's happening today</p></div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <button style="background:none;position:relative"><i data-feather="bell" style="width:20px;color:var(--text-muted)"></i><span style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span></button>
+        <img src="https://randomuser.me/api/portraits/women/12.jpg" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color)" alt="avatar">
+      </div>
+    </div>
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div><h2>Find the perfect service</h2><p>Browse 500+ verified professionals in your area</p></div>
+      <a href="services.html" class="btn" style="background:#fff;color:var(--primary);font-weight:700;padding:.65rem 1.5rem;border-radius:999px">Browse Services →</a>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <input type="text" placeholder="Search for services..." id="searchInput" oninput="filterRec()">
+    </div>
+
+    <!-- Category chips -->
+    <div class="cat-chips" id="catChips"></div>
+
+    <!-- Recommended -->
+    <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem">Recommended for You</h3>
+    <div class="rec-grid" id="recGrid"></div>
+
+    <!-- Active & Live Tracking -->
+    <div class="bookings-section" id="trackingContainer">
+      <h3 style="display:flex;align-items:center;gap:.5rem">
+        <i data-feather="clock" style="width:20px;color:var(--primary)"></i> Live Service Tracking
+      </h3>
+      <div id="liveTracking"></div>
+    </div>
+
+    <!-- Recently Completed (for reviews) -->
+    <div class="bookings-section" id="reviewSection" style="display:none;margin-top:3rem">
+      <h3 style="color:#10b981">Rate Your Experience</h3>
+      <div id="completedList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="safety-alert-overlay" style="display:none">
+  <div class="safety-alert-box" style="border-color:var(--primary)">
+    <h3 style="margin-bottom:.5rem">How was the service?</h3>
+    <p class="text-muted" style="margin-bottom:1.5rem">Your feedback helps us maintain quality.</p>
+    <div class="star-rating" style="justify-content:center;margin-bottom:1.5rem" id="starContainer">
+      <i data-feather="star" class="star" onclick="setRating(1)"></i>
+      <i data-feather="star" class="star" onclick="setRating(2)"></i>
+      <i data-feather="star" class="star" onclick="setRating(3)"></i>
+      <i data-feather="star" class="star" onclick="setRating(4)"></i>
+      <i data-feather="star" class="star" onclick="setRating(5)"></i>
+    </div>
+    <textarea id="reviewComment" class="form-input" placeholder="Add a comment (optional)..." style="margin-bottom:1.5rem"></textarea>
+    <div style="display:flex;gap:1rem">
+      <button class="btn btn-outline" style="flex:1" onclick="closeReview()">Later</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script>
+  AuthGuard.require('customer');
+  const user = SS.getUser();
+  document.getElementById('greeting').textContent = `Good evening, ${user.name}`;
+
+  // Live Tracking Logic
+  function updateDashboard() {
+    const allBookings = SS.getBookings().filter(b => b.customerId === user.id);
+    
+    // 1. Live Tracking (ETA or Active)
+    const active = allBookings.filter(b => b.status === 'eta' || b.status === 'active');
+    const trackEl = document.getElementById('liveTracking');
+    
+    if (active.length === 0) {
+      trackEl.innerHTML = '<p class="text-muted" style="font-size:.85rem;padding:2rem;text-align:center;background:#fff;border-radius:var(--radius-lg);border:1px dashed var(--border-color)">No services currently in progress.</p>';
+    } else {
+      trackEl.innerHTML = active.map(b => `
+        <div style="margin-bottom:2rem;background:#fff;padding:1.5rem;border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);border:1px solid var(--border-color)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div style="font-weight:700">${SS.getProvider(b.providerId)?.name} — ${b.serviceName || 'Service'}</div>
+            <div class="badge ${b.status==='active'?'badge-blue':'badge-yellow'}">${b.status.toUpperCase()}</div>
+          </div>
+          <div id="timeline-${b.id}"></div>
+        </div>
+      `).join('');
+      
+      active.forEach(b => TrackingSystem.render(b, `timeline-${b.id}`, false));
+    }
+
+    // 2. Completed (Check for missing reviews)
+    const completed = allBookings.filter(b => b.status === 'completed' && !b.reviewed);
+    const revSection = document.getElementById('reviewSection');
+    const compList = document.getElementById('completedList');
+    
+    if (completed.length > 0) {
+      revSection.style.display = 'block';
+      compList.innerHTML = completed.map(b => `
+        <div class="booking-row">
+          <div class="booking-info">
+            <div class="bk-title">${b.serviceName} with ${SS.getProvider(b.providerId)?.name}</div>
+            <div class="bk-meta">Completed on ${new Date(b.completedAt).toLocaleDateString()}</div>
+          </div>
+          <button onclick="openReview('${b.id}')" class="btn btn-primary" style="padding:.45rem 1rem;font-size:.8rem">Rate Service</button>
+        </div>
+      `).join('');
+    } else {
+      revSection.style.display = 'none';
+    }
+    
+    feather.replace();
+  }
+
+  // Event Listeners
+  window.addEventListener('ss_data_updated', updateDashboard);
+  updateDashboard();
+
+  // Categories & Search (Existing logic)
+  const cats = SS.getCategories();
+  const chipsEl = document.getElementById('catChips');
+  chipsEl.innerHTML = '<div class="chip active" onclick="filterCat(this,\'\')">All</div>' + cats.map(c=>`<div class="chip" onclick="filterCat(this,'${c}')">${c}</div>`).join('');
+
+  let activeCat = '';
+  function filterCat(el, cat) {
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+    activeCat = cat;
+    renderRec();
+  }
+
+  function renderRec() {
+    const q = (document.getElementById('searchInput').value||'').toLowerCase();
+    let svcs = SS.getAllServices();
+    if(activeCat) svcs = svcs.filter(s=>s.category===activeCat);
+    if(q) svcs = svcs.filter(s=>s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q)||s.providerName.toLowerCase().includes(q));
+    document.getElementById('recGrid').innerHTML = svcs.slice(0,3).map(s=>`
+      <a href="provider-profile.html?id=${s.providerId}" class="rec-card">
+        <div class="top"><img src="${s.providerPhoto}" class="avatar" alt=""><div><div class="name">${s.providerName}</div><div class="cat">${s.category}</div></div><div style="margin-left:auto" class="rating">★ ${s.providerRating}</div></div>
+        <div class="svc-name" style="font-weight:600">${s.name}</div>
+        <div class="price">₹${s.price} <span style="font-weight:400;color:var(--text-muted);font-size:.75rem">${s.unit}</span></div>
+      </a>`).join('') || '<p class="text-muted">No services found.</p>';
+    feather.replace();
+  }
+  renderRec();
+
+  // Review System
+  let currentReviewId = null;
+  let currentRating = 0;
+  function openReview(id) {
+    currentReviewId = id;
+    document.getElementById('reviewModal').style.display = 'flex';
+  }
+  function closeReview() { document.getElementById('reviewModal').style.display = 'none'; }
+  function setRating(r) {
+    currentRating = r;
+    const stars = document.querySelectorAll('#starContainer .star');
+    stars.forEach((s, i) => {
+      s.style.fill = i < r ? '#eab308' : 'none';
+      s.style.color = i < r ? '#eab308' : 'currentColor';
+    });
+  }
+  function submitReview() {
+    if (currentRating === 0) return alert('Please select a rating');
+    const b = SS.getBooking(currentReviewId);
+    SS.addReview({
+      providerId: b.providerId,
+      customerId: user.id,
+      customerName: user.name,
+      rating: currentRating,
+      comment: document.getElementById('reviewComment').value
+    });
+    SS.updateBooking(currentReviewId, { reviewed: true });
+    closeReview();
+    updateDashboard();
+  }
+</script>
+</body>
+</html>
+

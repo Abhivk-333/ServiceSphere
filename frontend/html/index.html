@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Sphere — Book Trusted Local Services Instantly</title>
+  <meta name="description" content="Find verified professionals near you in seconds. From home cleaning to specialized consulting, the help you need is just a click away.">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .hero-split{display:flex;align-items:center;gap:4rem;padding:5rem 0 3rem;text-align:left}
+    .hero-split .hero-text{flex:1}
+    .hero-split .hero-visual{flex:1;position:relative}
+    .hero-split .hero-text h1{font-size:3.2rem;line-height:1.08;letter-spacing:-1.5px;margin-bottom:1.25rem}
+    .hero-split .hero-text p{font-size:1.1rem;color:var(--text-muted);margin-bottom:2rem;max-width:480px}
+    .hero-cta{display:flex;gap:1rem;margin-bottom:2rem}
+    .badge-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(79,70,229,.08);color:var(--primary);padding:.35rem .85rem;border-radius:999px;font-size:.78rem;font-weight:600;margin-bottom:1.25rem}
+    .hero-img{width:100%;max-width:480px;border-radius:var(--radius-xl);box-shadow:var(--shadow-xl);object-fit:cover;height:340px}
+    .social-proof{display:flex;align-items:center;gap:.75rem;font-size:.85rem;color:var(--text-muted)}
+    .avatar-stack{display:flex}
+    .avatar-stack img{width:36px;height:36px;border-radius:50%;border:2px solid #fff;margin-left:-10px;object-fit:cover}
+    .avatar-stack img:first-child{margin-left:0}
+    /* Features */
+    .features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+    .feature-card{padding:2rem 1.5rem;border-radius:var(--radius-lg);border:1px solid var(--border-color);background:var(--surface-color);transition:var(--transition)}
+    .feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(79,70,229,.2)}
+    .feature-icon{width:48px;height:48px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;background:rgba(79,70,229,.07);color:var(--primary)}
+    .feature-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+    .feature-card p{font-size:.85rem;color:var(--text-muted);line-height:1.5}
+    /* How it works */
+    .hiw{display:flex;align-items:center;gap:4rem;padding:4rem 0}
+    .hiw-image{flex:1;position:relative}
+    .hiw-image img{width:100%;max-width:380px;border-radius:var(--radius-xl);box-shadow:var(--shadow-xl)}
+    .hiw-content{flex:1}
+    .hiw-step{display:flex;gap:1.25rem;margin-bottom:2rem}
+    .hiw-num{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+    .hiw-step h4{font-size:1.05rem;font-weight:700;margin-bottom:.3rem}
+    .hiw-step p{font-size:.85rem;color:var(--text-muted);line-height:1.5}
+    .testimonial-section{background:#f1f5f9;padding:5rem 0;margin-top:2rem}
+    .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+    .testi-card{background:#fff;border-radius:var(--radius-lg);padding:1.75rem;border:1px solid var(--border-color)}
+    .testi-stars{color:#eab308;font-size:.85rem;margin-bottom:.75rem}
+    .testi-card blockquote{font-size:.9rem;color:var(--text-muted);line-height:1.6;margin-bottom:1rem}
+    .testi-author{display:flex;align-items:center;gap:.75rem}
+    .testi-author img{width:40px;height:40px;border-radius:50%;object-fit:cover}
+    .testi-author .name{font-weight:600;font-size:.85rem}
+    .testi-author .role{font-size:.75rem;color:var(--text-muted)}
+    footer{background:var(--surface-color);border-top:1px solid var(--border-color);padding:3rem 0 1.5rem}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2rem;margin-bottom:2rem}
+    .footer-brand{font-size:1.25rem;font-weight:800}
+    .footer-desc{font-size:.82rem;color:var(--text-muted);margin-top:.5rem;line-height:1.6}
+    .footer-col h4{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem;color:var(--text-muted)}
+    .footer-col a{display:block;font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;transition:var(--transition)}
+    .footer-col a:hover{color:var(--primary)}
+    .footer-bottom{text-align:center;font-size:.78rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1.5rem}
+    @media(max-width:768px){.hero-split,.hiw{flex-direction:column;text-align:center;gap:2rem}.features-grid{grid-template-columns:1fr 1fr}.testi-grid,.footer-grid{grid-template-columns:1fr}.hero-cta{justify-content:center}}
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container flex items-center justify-between">
+    <a href="index.html" class="navbar-brand text-gradient">Service Sphere</a>
+    <div class="nav-links flex items-center gap-4">
+      <a href="customer-auth.html">Find Services</a>
+      <a href="provider-login.html" class="btn btn-primary" style="padding:.5rem 1.2rem;font-size:.85rem">Become a Provider</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="container">
+  <div class="hero-split">
+    <div class="hero-text">
+      <div class="badge-pill"><i data-feather="check-circle" style="width:14px;height:14px"></i> Verified Local Professionals</div>
+      <h1>Book Trusted Local<br>Services <span class="text-gradient">Instantly</span></h1>
+      <p>Find verified professionals near you in seconds. From home cleaning to specialized consulting, the help you need is just a click away.</p>
+      <div class="hero-cta">
+        <a href="customer-auth.html" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:.5rem" onclick="localStorage.setItem('role','customer')">Find Services <i data-feather="arrow-right" style="width:16px"></i></a>
+        <a href="provider-login.html" class="btn btn-outline" onclick="localStorage.setItem('role','provider')">Become a Provider</a>
+      </div>
+      <div class="social-proof">
+        <div class="avatar-stack">
+          <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
+          <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+          <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
+          <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="">
+        </div>
+        Join <strong style="margin:0 .2rem">10k+</strong> satisfied customers
+      </div>
+    </div>
+    <div class="hero-visual">
+      <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=600&h=400&fit=crop" alt="Service professionals" class="hero-img">
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" style="padding-top:2rem">
+  <div class="container">
+    <h2 class="section-title">Why Choose Service Sphere?</h2>
+    <p class="text-center text-muted" style="margin-top:-2rem;margin-bottom:2.5rem;font-size:.95rem">We've built a platform that prioritizes speed, trust, and quality for every single interaction.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="calendar"></i></div>
+        <h3>Easy Booking</h3>
+        <p>Schedule your services in just a few taps with our streamlined interface.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="map-pin"></i></div>
+        <h3>Real-time Tracking</h3>
+        <p>Monitor your service provider's arrival and progress in real-time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="shield"></i></div>
+        <h3>Verified Professionals</h3>
+        <p>Every provider undergoes a rigorous background check and skill verification.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i data-feather="activity"></i></div>
+        <h3>Safety Monitoring</h3>
+        <p>24/7 safety protocols and active monitoring for every active session.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section" style="padding-top:1rem">
+  <div class="container">
+    <h2 class="section-title">How It Works</h2>
+    <div class="hiw">
+      <div class="hiw-image">
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=500&fit=crop" alt="Booking process">
+      </div>
+      <div class="hiw-content">
+        <div class="hiw-step"><div class="hiw-num">1</div><div><h4>Search</h4><p>Browse through our curated list of local experts by category, rating, or proximity.</p></div></div>
+        <div class="hiw-step"><div class="hiw-num">2</div><div><h4>Book</h4><p>Select your time slot and confirm through our secure booking system.</p></div></div>
+        <div class="hiw-step"><div class="hiw-num">3</div><div><h4>Done</h4><p>Track your provider and enjoy a premium service experience at your doorstep.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonial-section">
+  <div class="container">
+    <h2 class="section-title">What Our Customers Say</h2>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"Found an amazing electrician within minutes. The booking process was seamless and the work was top-notch."</blockquote>
+        <div class="testi-author"><img src="https://randomuser.me/api/portraits/women/12.jpg" alt=""><div><div class="name">Ananya Gupta</div><div class="role">Mumbai</div></div></div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"The safety timer feature gives me so much peace of mind when booking services for my elderly parents."</blockquote>
+        <div class="testi-author"><img src="https://randomuser.me/api/portraits/men/51.jpg" alt=""><div><div class="name">Vikash Mehra</div><div class="role">Delhi</div></div></div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <blockquote>"As a provider, this platform has doubled my client base. The dashboard is intuitive and earnings tracking is excellent."</blockquote>
+        <div class="testi-author"><img src="https://randomuser.me/api/portraits/men/75.jpg" alt=""><div><div class="name">Amit Patel</div><div class="role">Bangalore</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div><div class="footer-brand text-gradient">Service Sphere</div><p class="footer-desc">Connecting elite professionals with discerning homeowners. Quality guaranteed.</p></div>
+      <div class="footer-col"><h4>Platform</h4><a href="customer-auth.html">Find Services</a><a href="provider-login.html">List a Service</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="#">Success Stories</a><a href="#">Privacy Policy</a></div>
+      <div class="footer-col"><h4>Support</h4><a href="#">Help Center</a><a href="#">Terms of Use</a></div>
+    </div>
+    <div class="footer-bottom">© 2026 Service Sphere. Precision in Every Service.</div>
+  </div>
+</footer>
+
+<script>feather.replace();</script>
+<script src="js/data.js"></script>
+</body>
+</html>

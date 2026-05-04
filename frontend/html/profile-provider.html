@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .profile-sections{max-width:720px}
+    .p-section{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:2rem;margin-bottom:1.5rem}
+    .p-section h2{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem}
+    .p-section h2 .icon{width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:rgba(79,70,229,.08);color:var(--primary)}
+    .photo-row{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+    .photo-row img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border-color)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .save-bar{display:flex;justify-content:flex-end;gap:1rem;margin-top:1rem}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Provider</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-provider.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="manage-services.html" class="sidebar-item"><i data-feather="briefcase" style="width:18px"></i> My Services</a>
+      <a href="active-job.html" class="sidebar-item"><i data-feather="zap" style="width:18px"></i> Active Jobs</a>
+      <a href="chat-provider.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+      <a href="earnings.html" class="sidebar-item"><i data-feather="dollar-sign" style="width:18px"></i> Earnings</a>
+      <a href="profile-provider.html" class="sidebar-item active"><i data-feather="user" style="width:18px"></i> My Profile</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:.3rem">My Profile</h1>
+    <p class="text-muted" style="font-size:.85rem;margin-bottom:2rem">Update your information — this feeds your public profile and service listings</p>
+    <div class="profile-sections" id="profileContent"></div>
+  </main>
+</div>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script>AuthGuard.require('provider');</script>
+<script>
+  const prov=SS.getProvider('p1')||SS.getProviders()[0];
+  document.getElementById('profileContent').innerHTML=`
+    <div class="p-section">
+      <h2><span class="icon"><i data-feather="user" style="width:16px"></i></span> Profile Information</h2>
+      <div class="photo-row"><img src="${prov.photo}" alt=""><div><button class="btn btn-outline" style="padding:.4rem 1rem;font-size:.8rem">Change Photo</button><p class="text-muted" style="font-size:.72rem;margin-top:.3rem">JPG, PNG up to 5MB</p></div></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" id="pName" value="${prov.name}"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="pPhone" value="${prov.phone}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="pBio" rows="3">${prov.bio}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="pCat" value="${prov.category}"></div>
+        <div class="form-group"><label class="form-label">City</label><input type="text" class="form-input" id="pCity" value="${prov.city}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Experience</label><input type="text" class="form-input" id="pExp" value="${prov.experience}"></div>
+    </div>
+    <div class="save-bar">
+      <a href="dashboard-provider.html" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+    </div>`;
+  feather.replace();
+
+  function saveProfile(){
+    prov.name=document.getElementById('pName').value;
+    prov.phone=document.getElementById('pPhone').value;
+    prov.bio=document.getElementById('pBio').value;
+    prov.category=document.getElementById('pCat').value;
+    prov.city=document.getElementById('pCity').value;
+    prov.experience=document.getElementById('pExp').value;
+    SS.saveProvider(prov);
+    alert('Profile saved! Changes will reflect across the platform.');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Booking — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .booking-wrap{max-width:640px;margin:0 auto}
+    .booking-wrap h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}
+    .summary-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.75rem;margin-bottom:1.5rem}
+    .summary-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem}
+    .sum-row{display:flex;justify-content:space-between;font-size:.88rem;padding:.5rem 0;border-bottom:1px solid #f1f5f9}
+    .sum-row:last-child{border:none}
+    .sum-row.total{font-weight:700;font-size:1.05rem;border-top:2px solid var(--border-color);margin-top:.5rem;padding-top:.75rem;border-bottom:none}
+    .prov-bar{display:flex;align-items:center;gap:1rem;padding:1rem;background:#f8fafc;border-radius:var(--radius-md);margin-bottom:1.25rem}
+    .prov-bar img{width:48px;height:48px;border-radius:50%;object-fit:cover}
+    .prov-bar .name{font-weight:700;font-size:.9rem}
+    .prov-bar .cat{font-size:.78rem;color:var(--text-muted)}
+    .address-input{margin-top:1rem}
+    .confirm-actions{display:flex;gap:1rem;margin-top:1.5rem}
+    .success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+    .success-overlay.show{display:flex}
+    .success-box{background:#fff;border-radius:var(--radius-xl);padding:3rem;text-align:center;max-width:400px;animation:popIn .3s ease}
+    @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-box .icon{width:64px;height:64px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:#16a34a}
+    .success-box h2{font-size:1.3rem;font-weight:700;margin-bottom:.5rem}
+    .success-box p{font-size:.88rem;color:var(--text-muted);margin-bottom:1.5rem}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <div class="booking-wrap" id="content"></div>
+  </main>
+</div>
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="icon"><i data-feather="check" style="width:32px;height:32px"></i></div>
+    <h2>Booking Confirmed!</h2>
+    <p>Your request has been sent to the provider. You'll be notified once they accept.</p>
+    <a href="dashboard-customer.html" class="btn btn-primary" style="padding:.65rem 2rem">Go to Dashboard</a>
+  </div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script>AuthGuard.require('customer');</script>
+<script>
+  const params=new URLSearchParams(location.search);
+  const prov=SS.getProvider(params.get('pid')||'p1');
+  const svc=(prov?.services||[]).find(s=>s.id===(params.get('sid')||'s1'))||prov?.services[0];
+  const slot=decodeURIComponent(params.get('slot')||'11:00 AM');
+  const today=new Date();const dateStr=today.toISOString().split('T')[0];
+
+  document.getElementById('content').innerHTML=`
+    <a href="provider-profile.html?id=${prov.id}" class="text-muted" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;margin-bottom:1rem"><i data-feather="arrow-left" style="width:16px"></i> Back to profile</a>
+    <h1>Confirm Your Booking</h1>
+    <p class="text-muted" style="font-size:.88rem;margin-bottom:2rem">Review the details below before confirming</p>
+
+    <div class="prov-bar"><img src="${prov.photo}" alt=""><div><div class="name">${prov.name}</div><div class="cat">${prov.category} · ${prov.city}</div></div><div style="margin-left:auto;font-size:.85rem;font-weight:600;color:#eab308">★ ${prov.rating}</div></div>
+
+    <div class="summary-card">
+      <h3>Booking Summary</h3>
+      <div class="sum-row"><span>Service</span><span>${svc.name}</span></div>
+      <div class="sum-row"><span>Date</span><span>${dateStr}</span></div>
+      <div class="sum-row"><span>Time Slot</span><span>${slot}</span></div>
+      <div class="sum-row"><span>Est. Duration</span><span>${svc.duration} min</span></div>
+      <div class="sum-row total"><span>Total</span><span>₹${svc.price}</span></div>
+    </div>
+
+    <div class="summary-card address-input">
+      <h3>Service Address</h3>
+      <input type="text" class="form-input" id="addressInput" placeholder="e.g. Flat 302, Lotus Apt, Andheri West" value="Flat 302, Lotus Apt, Andheri West">
+    </div>
+
+    <div class="confirm-actions">
+      <a href="provider-profile.html?id=${prov.id}" class="btn btn-outline" style="flex:1;text-align:center">Cancel</a>
+      <button class="btn btn-primary" style="flex:2" onclick="confirmBooking()">Confirm Booking — ₹${svc.price}</button>
+    </div>`;
+  feather.replace();
+
+  function confirmBooking(){
+    const user=SS.getUser()||{id:'c1'};
+    SS.addBooking({
+      customerId:user.id,
+      providerId:prov.id,
+      serviceId:svc.id,
+      serviceName: svc.name,
+      expectedDuration: svc.duration,
+      status:'pending',
+      date:dateStr,
+      time:slot,
+      address:document.getElementById('addressInput').value,
+      amount:svc.price,
+      safetyStatus:null
+    });
+    document.getElementById('successOverlay').classList.add('show');
+    feather.replace();
+  }
+</script>
+</body>
+</html>

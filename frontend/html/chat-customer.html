@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Customer</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item active"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem">Messages</h1>
+    <div class="chat-container" id="chatArea">
+      <div class="chat-header" id="chatHeader"></div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="chat-send-btn" onclick="sendMsg()"><i data-feather="send" style="width:18px"></i></button>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script>AuthGuard.require('customer');</script>
+<script>
+  const bid=new URLSearchParams(location.search).get('bid')||'b2';
+  const booking=SS.getBooking(bid);
+  const prov=booking?SS.getProvider(booking.providerId):SS.getProviders()[0];
+
+  document.getElementById('chatHeader').innerHTML=`
+    <img src="${prov.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" alt="">
+    <div><div style="font-weight:600;font-size:.9rem">${prov.name}</div><div style="font-size:.75rem;color:var(--text-muted)">${prov.category}</div></div>
+    <span class="badge badge-green" style="margin-left:auto;font-size:.7rem">● Online</span>`;
+
+  function renderMessages(){
+    const chat=SS.getChat(bid);
+    const el=document.getElementById('chatMessages');
+    if(!chat||!chat.messages.length){el.innerHTML='<p style="text-align:center;color:var(--text-muted);margin-top:2rem;font-size:.85rem">No messages yet. Start the conversation!</p>';return;}
+    el.innerHTML=chat.messages.map(m=>`<div class="chat-message ${m.from==='customer'?'sent':'received'}"><div>${m.text}</div><div style="font-size:.65rem;opacity:.6;margin-top:.3rem;text-align:right">${m.time}</div></div>`).join('');
+    el.scrollTop=el.scrollHeight;
+  }
+
+  function sendMsg(){
+    const inp=document.getElementById('msgInput');
+    const text=inp.value.trim();if(!text)return;
+    const now=new Date();const time=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    SS.addMessage(bid,{from:'customer',text,time});
+    inp.value='';
+    renderMessages();
+    // Simulate reply
+    setTimeout(()=>{SS.addMessage(bid,{from:'provider',text:'Got it! I\'ll get back to you shortly.',time});renderMessages();},1500);
+  }
+  renderMessages();
+  feather.replace();
+</script>
+</body>
+</html>

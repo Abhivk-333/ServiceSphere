@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Login — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .tab-bar{display:flex;gap:0;margin-bottom:2rem;border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}
+    .tab-btn{flex:1;padding:.65rem;font-size:.88rem;font-weight:600;background:#fff;border:none;cursor:pointer;transition:var(--transition);color:var(--text-muted)}
+    .tab-btn.active{background:var(--primary);color:#fff}
+    .tab-panel{display:none}.tab-panel.active{display:block;animation:fadeUp .3s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .otp-row{display:flex;gap:.75rem;justify-content:center;margin:1.5rem 0}
+    .otp-input{width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:700;border:2px solid var(--border-color);border-radius:var(--radius-md);outline:none;transition:.2s}
+    .otp-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+    .otp-input.filled{border-color:var(--primary);background:rgba(79,70,229,.04)}
+    .otp-input.error-cell{border-color:#ef4444}
+    .step{display:none}.step.active{display:block;animation:fadeUp .3s ease both}
+    .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:var(--text-muted);font-size:.82rem}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border-color)}
+    .pass-strength{height:4px;border-radius:2px;margin-top:.4rem;transition:.3s}
+    .name-row{display:flex;gap:.75rem}.name-row .form-group{flex:1}
+    .role-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(79,70,229,.08);color:var(--primary);padding:.35rem 1rem;border-radius:999px;font-size:.8rem;font-weight:600;margin-bottom:1.5rem}
+    .trust-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.15);padding:.35rem .85rem;border-radius:999px;font-size:.75rem;margin-bottom:1.5rem}
+    .auth-visual-content h2{font-size:2rem;font-weight:700;margin-bottom:1rem}
+    .auth-visual-content p{opacity:.85;line-height:1.6}
+    .auth-visual-content .feature-list{margin-top:2rem;text-align:left}
+    .auth-visual-content .feature-list li{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;font-size:.9rem}
+    .otp-sent-banner{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:.65rem 1rem;font-size:.82rem;color:#15803d;display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
+    #toast{position:fixed;top:1.5rem;right:1.5rem;z-index:9999;display:flex;align-items:center;gap:.75rem;background:#fff;color:#111;padding:.85rem 1.25rem;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.15);font-size:.88rem;font-weight:500;transform:translateX(120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);min-width:260px}
+    #toast.show{transform:translateX(0)}#toast.success{border-left:4px solid #22c55e}#toast.error{border-left:4px solid #ef4444}#toast.info{border-left:4px solid #3b82f6}
+    #toast .t-icon{width:20px;height:20px;flex-shrink:0}#toast.success .t-icon{color:#22c55e}#toast.error .t-icon{color:#ef4444}#toast.info .t-icon{color:#3b82f6}
+    .btn-loading{position:relative;pointer-events:none;opacity:.85}
+    .btn-loading::after{content:'';position:absolute;right:1rem;top:50%;transform:translateY(-50%);width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+    #successOverlay{position:fixed;inset:0;background:rgba(255,255,255,.96);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;opacity:0;pointer-events:none;transition:opacity .4s}
+    #successOverlay.show{opacity:1;pointer-events:all}
+    .success-ring{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
+    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+    #countdown{font-size:.78rem;color:var(--text-muted);margin-top:.5rem}
+    #countdown span{color:var(--primary);font-weight:600}
+  </style>
+</head>
+<body>
+
+<div id="toast"><svg class="t-icon" id="toastIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg><span id="toastMsg"></span></div>
+
+<div id="successOverlay">
+  <div class="success-ring"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+  <h3 id="overlayTitle">Welcome!</h3>
+  <p>Taking you to your dashboard…</p>
+</div>
+
+<div class="auth-container">
+  <div class="auth-visual">
+    <div class="auth-visual-content">
+      <div class="trust-badge"><i data-feather="shield" style="width:14px;height:14px"></i> Secure &amp; Verified</div>
+      <h2>Find Trusted<br>Local Services</h2>
+      <p>Book verified professionals near you. Fast, safe, and reliable.</p>
+      <ul class="feature-list">
+        <li><i data-feather="check-circle" style="width:18px;height:18px"></i> 500+ verified professionals</li>
+        <li><i data-feather="zap" style="width:18px;height:18px"></i> Instant booking confirmation</li>
+        <li><i data-feather="shield" style="width:18px;height:18px"></i> Safety monitoring on every job</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="auth-form-area">
+    <div class="auth-box">
+      <a href="index.html" class="text-gradient font-bold" style="font-size:1.3rem;display:block;margin-bottom:.3rem">Service Sphere</a>
+      <div class="role-pill"><i data-feather="search" style="width:14px;height:14px"></i> Customer Account</div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- LOGIN PANEL -->
+      <div class="tab-panel active" id="panel-login">
+        <!-- Step 1: Phone -->
+        <div class="step active" id="login-step-phone">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <div style="display:flex;gap:.5rem">
+              <input type="text" class="form-input" value="+91" style="width:60px;text-align:center" readonly>
+              <input type="tel" id="loginPhone" class="form-input" placeholder="10-digit number" maxlength="10" style="flex:1" oninput="this.value=this.value.replace(/\D/g,'')">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:.5rem" id="sendOtpBtn" onclick="sendLoginOTP()">Send OTP</button>
+          <div class="divider">or</div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="loginEmail" class="form-input" placeholder="you@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="Your password">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="loginWithEmail()">Sign In with Email</button>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div class="step" id="login-step-otp">
+          <div class="otp-sent-banner" id="otpBanner">
+            <i data-feather="phone" style="width:16px;height:16px"></i>
+            OTP sent to <strong id="displayPhone" style="margin-left:.3rem"></strong> &nbsp;·&nbsp; Use <strong>123456</strong> for demo
+          </div>
+          <p style="font-size:.9rem;margin-bottom:.25rem;font-weight:600">Enter verification code</p>
+          <div class="otp-row" id="otpRow">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="0">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="1">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="2">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="3">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="4">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="5">
+          </div>
+          <button class="btn btn-primary" style="width:100%" id="verifyBtn" onclick="verifyLoginOTP()">Verify &amp; Continue</button>
+          <div style="margin-top:1rem;text-align:center">
+            <div id="countdown"></div>
+            <div id="resendLink" style="display:none;font-size:.82rem">Didn't get it? <a onclick="resendOTP()" style="color:var(--primary);cursor:pointer;font-weight:600">Resend</a></div>
+          </div>
+          <div style="margin-top:.75rem;text-align:center"><a onclick="backToPhone()" style="font-size:.82rem;color:var(--text-muted);cursor:pointer;text-decoration:underline">← Change Number</a></div>
+        </div>
+      </div>
+
+      <!-- REGISTER PANEL -->
+      <div class="tab-panel" id="panel-register">
+        <form id="registerForm" onsubmit="handleRegister(event)" novalidate>
+          <div class="name-row">
+            <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" id="fname" placeholder="Ananya" required></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" id="lname" placeholder="Gupta" required></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="regEmail" placeholder="ananya@email.com" required></div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <div style="display:flex;gap:.5rem">
+              <input type="text" class="form-input" value="+91" style="width:60px;text-align:center" readonly>
+              <input type="tel" class="form-input" id="regPhone" placeholder="9988776655" maxlength="10" required style="flex:1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="regPassword" placeholder="Min 8 characters" required minlength="8">
+            <div class="pass-strength" id="passBar"></div>
+            <div id="passHint" style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem"></div>
+          </div>
+          <p style="font-size:.78rem;color:var(--text-muted);margin:.75rem 0">By signing up you agree to our <a href="#" style="color:var(--primary)">Terms</a> &amp; <a href="#" style="color:var(--primary)">Privacy Policy</a>.</p>
+          <button type="submit" class="btn btn-primary" style="width:100%" id="regBtn">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>feather.replace();</script>
+<script src="js/data.js"></script>
+<script>
+  // Set role
+  localStorage.setItem('role', 'customer');
+  localStorage.setItem('ss_pending_role', 'customer');
+
+  // Redirect if already logged in as customer
+  const existing = SS.getUser();
+  if (existing && existing.phone && existing.role === 'customer') {
+    window.location.href = 'dashboard-customer.html';
+  }
+
+  /* ── Tab Switching ── */
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+
+  /* ── Toast ── */
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.className = `show ${type}`;
+    const paths = {
+      success: '<polyline points="20 6 9 17 4 12"></polyline>',
+      error: '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
+      info: '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>'
+    };
+    document.getElementById('toastIcon').innerHTML = paths[type] || paths.info;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.className = type; }, 3500);
+  }
+
+  /* ── Countdown ── */
+  let countdownInterval;
+  function startCountdown(sec = 30) {
+    document.getElementById('resendLink').style.display = 'none';
+    const el = document.getElementById('countdown');
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      el.innerHTML = sec > 0 ? `Resend in <span>${sec}s</span>` : '';
+      if (sec <= 0) { clearInterval(countdownInterval); document.getElementById('resendLink').style.display = 'block'; }
+      sec--;
+    }, 1000);
+  }
+
+  /* ── OTP inputs ── */
+  document.querySelectorAll('.otp-input').forEach((inp, i, all) => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '');
+      if (inp.value) { inp.classList.add('filled'); if (i < all.length - 1) all[i + 1].focus(); if ([...all].every(x => x.value)) verifyLoginOTP(); }
+      else inp.classList.remove('filled');
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Backspace' && !inp.value && i > 0) { all[i-1].value=''; all[i-1].classList.remove('filled'); all[i-1].focus(); } });
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      [...all].forEach((box, j) => { box.value = pasted[j] || ''; box.value ? box.classList.add('filled') : box.classList.remove('filled'); });
+      all[Math.min(pasted.length, all.length - 1)].focus();
+      if (pasted.length >= 6) verifyLoginOTP();
+    });
+  });
+
+  /* ── Send OTP ── */
+  function sendLoginOTP() {
+    const ph = document.getElementById('loginPhone').value.trim();
+    if (ph.length !== 10 || !/^\d{10}$/.test(ph)) { showToast('Enter a valid 10-digit number', 'error'); return; }
+    const btn = document.getElementById('sendOtpBtn');
+    btn.classList.add('btn-loading'); btn.textContent = 'Sending…';
+    setTimeout(() => {
+      btn.classList.remove('btn-loading'); btn.textContent = 'Send OTP';
+      document.getElementById('displayPhone').textContent = '+91 ' + ph;
+      document.getElementById('login-step-phone').classList.remove('active');
+      document.getElementById('login-step-otp').classList.add('active');
+      document.querySelector('.otp-input[data-idx="0"]').focus();
+      showToast('OTP sent to +91 ' + ph, 'info');
+      startCountdown(30);
+      feather.replace();
+    }, 1000);
+  }
+
+  function resendOTP() {
+    document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('filled', 'error-cell'); });
+    document.querySelector('.otp-input[data-idx="0"]').focus();
+    showToast('New OTP sent!', 'info'); startCountdown(30);
+  }
+
+  function backToPhone() {
+    clearInterval(countdownInterval);
+    document.getElementById('login-step-otp').classList.remove('active');
+    document.getElementById('login-step-phone').classList.add('active');
+    document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('filled', 'error-cell'); });
+  }
+
+  /* ── Verify OTP → Dashboard ── */
+  let verifying = false;
+  function verifyLoginOTP() {
+    if (verifying) return;
+    const cells = document.querySelectorAll('.otp-input');
+    const code = [...cells].map(i => i.value).join('');
+    if (code.length < 6) { cells.forEach(c => { c.classList.add('error-cell'); setTimeout(() => c.classList.remove('error-cell'), 400); }); showToast('Enter full 6-digit OTP', 'error'); return; }
+    if (code !== '123456') { cells.forEach(c => { c.classList.add('error-cell'); setTimeout(() => c.classList.remove('error-cell'), 400); c.value = ''; c.classList.remove('filled'); }); cells[0].focus(); showToast('Incorrect OTP. Use 123456 for demo', 'error'); return; }
+    verifying = true;
+    const btn = document.getElementById('verifyBtn');
+    btn.classList.add('btn-loading'); btn.textContent = 'Verifying…';
+    setTimeout(() => {
+      const phone = document.getElementById('loginPhone').value.trim();
+      let user = SS.getUser();
+      if (!user || user.phone !== phone) user = { id: 'c1', name: 'Ananya', lastname: 'Gupta', phone, role: 'customer' };
+      user.role = 'customer';
+      SS.setUser(user);
+      localStorage.setItem('role', 'customer');
+      localStorage.removeItem('ss_pending_role');
+      document.getElementById('overlayTitle').textContent = 'Welcome, ' + user.name + '!';
+      setTimeout(() => {
+        document.getElementById('successOverlay').classList.add('show');
+        setTimeout(() => { window.location.href = 'dashboard-customer.html'; }, 1600);
+      }, 400);
+    }, 1200);
+  }
+
+  /* ── Login with Email ── */
+  function loginWithEmail() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showToast('Enter email and password', 'error'); return; }
+    setTimeout(() => {
+      const user = { id: 'c1', name: 'Ananya', lastname: 'Gupta', email, phone: '9999999999', role: 'customer' };
+      SS.setUser(user);
+      localStorage.setItem('role', 'customer');
+      document.getElementById('overlayTitle').textContent = 'Welcome, ' + user.name + '!';
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { window.location.href = 'dashboard-customer.html'; }, 1600);
+    }, 800);
+  }
+
+  /* ── Password Strength ── */
+  const hints = ['Too short','Weak','Fair','Strong','Very strong'];
+  const hintColors = ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+  document.getElementById('regPassword').addEventListener('input', function() {
+    const bar = document.getElementById('passBar');
+    const hint = document.getElementById('passHint');
+    const l = this.value.length;
+    const score = l === 0 ? 0 : l < 5 ? 1 : l < 8 ? 2 : l < 12 ? 3 : 4;
+    bar.style.width = (score / 4 * 100) + '%';
+    bar.style.background = hintColors[score] || '';
+    hint.textContent = l > 0 ? hints[score] : '';
+    hint.style.color = hintColors[score];
+  });
+
+  /* ── Register Submit ── */
+  function handleRegister(e) {
+    e.preventDefault();
+    const fname = document.getElementById('fname').value.trim();
+    const lname = document.getElementById('lname').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const pwd = document.getElementById('regPassword').value;
+    if (!fname || !lname) { showToast('Enter your full name', 'error'); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Enter a valid email', 'error'); return; }
+    if (phone.length !== 10) { showToast('Enter a valid 10-digit phone', 'error'); return; }
+    if (pwd.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+    const btn = document.getElementById('regBtn');
+    btn.classList.add('btn-loading'); btn.textContent = 'Creating…';
+    setTimeout(() => {
+      const user = { id: 'c' + Date.now(), name: fname, lastname: lname, email, phone, role: 'customer' };
+      SS.setUser(user);
+      localStorage.setItem('role', 'customer');
+      btn.classList.remove('btn-loading');
+      showToast('Account created!', 'success');
+      document.getElementById('overlayTitle').textContent = 'Welcome, ' + fname + '!';
+      setTimeout(() => {
+        document.getElementById('successOverlay').classList.add('show');
+        setTimeout(() => { window.location.href = 'dashboard-customer.html'; }, 1600);
+      }, 600);
+    }, 1200);
+  }
+</script>
+</body>
+</html>

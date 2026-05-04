@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Profile — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .profile-hero{position:relative;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:var(--radius-xl);padding:2.5rem;color:#fff;margin-bottom:2rem;overflow:hidden}
+    .profile-hero::after{content:'';position:absolute;right:-60px;bottom:-60px;width:250px;height:250px;background:rgba(255,255,255,.05);border-radius:50%}
+    .profile-hero .hero-top{display:flex;align-items:center;gap:1.5rem}
+    .profile-hero .avatar{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3)}
+    .profile-hero .info h1{font-size:1.6rem;font-weight:700}
+    .profile-hero .info .meta{font-size:.85rem;opacity:.8;margin-top:.2rem}
+    .profile-hero .badges-row{display:flex;gap:.5rem;margin-top:.5rem}
+    .profile-hero .pbadge{font-size:.7rem;padding:.2rem .6rem;border-radius:999px;background:rgba(255,255,255,.15);font-weight:600}
+    .profile-hero .rating-big{font-size:1.4rem;font-weight:700;display:flex;align-items:center;gap:.4rem;margin-top:1rem}
+    .profile-hero .rating-big span{font-size:.85rem;font-weight:400;opacity:.7}
+    .two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:2rem}
+    .section-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.5rem}
+    .section-card h2{font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+    .about-text{font-size:.88rem;color:var(--text-muted);line-height:1.7}
+    .svc-list{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem}
+    .svc-item{display:flex;align-items:flex-start;gap:.6rem;padding:.75rem;border:1px solid var(--border-color);border-radius:var(--radius-md);transition:var(--transition);cursor:pointer}
+    .svc-item:hover{border-color:var(--primary);background:rgba(79,70,229,.02)}
+    .svc-item.selected{border-color:var(--primary);background:rgba(79,70,229,.05)}
+    .svc-item .dot{width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:6px;flex-shrink:0}
+    .svc-item .svc-title{font-weight:600;font-size:.82rem}
+    .svc-item .svc-sub{font-size:.72rem;color:var(--text-muted)}
+    .booking-card{position:sticky;top:100px}
+    .booking-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem}
+    .slot-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0}
+    .slot{padding:.4rem .85rem;border:1px solid var(--border-color);border-radius:var(--radius-md);font-size:.78rem;cursor:pointer;transition:var(--transition)}
+    .slot:hover,.slot.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .cost-row{display:flex;justify-content:space-between;font-size:.85rem;padding:.4rem 0}
+    .cost-row.total{font-weight:700;font-size:1rem;border-top:1px solid var(--border-color);margin-top:.5rem;padding-top:.75rem}
+    .reviews-section{margin-top:2rem}
+    .review-card{padding:1rem 0;border-bottom:1px solid var(--border-color)}
+    .review-card:last-child{border-bottom:none}
+    .rev-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem}
+    .rev-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem}
+    .rev-name{font-weight:600;font-size:.85rem}
+    .rev-date{font-size:.72rem;color:var(--text-muted)}
+    .rev-stars{color:#eab308;font-size:.8rem}
+    .rev-text{font-size:.83rem;color:var(--text-muted);line-height:1.6}
+    @media(max-width:768px){.two-col{grid-template-columns:1fr}.svc-list{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item active"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444" onclick="SS.logout()"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main-content" id="main"></main>
+</div>
+<script>feather.replace();</script>
+<script src="js/data.js"></script>
+<script>
+  const pid=new URLSearchParams(location.search).get('id')||'p1';
+  const prov=SS.getProvider(pid);
+  const reviews=SS.getReviews(pid);
+  if(!prov){document.getElementById('main').innerHTML='<p>Provider not found.</p>';throw'';}
+
+  let selectedSvc=prov.services[0];
+  let selectedSlot='11:00 AM';
+
+  function renderPage(){
+    document.title=prov.name+' — Service Sphere';
+    document.getElementById('main').innerHTML=`
+    <div class="profile-hero">
+      <div class="hero-top">
+        <img src="${prov.photo}" class="avatar" alt="${prov.name}">
+        <div class="info">
+          <h1>${prov.name}</h1>
+          <div class="meta">${prov.category} · ${prov.city} · ${prov.experience}</div>
+          <div class="badges-row"><span class="pbadge">✓ Verified</span><span class="pbadge">⚡ Fast Responder</span></div>
+          <div class="rating-big">★ ${prov.rating} <span>(${prov.reviewCount} reviews)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-card">
+          <h2>About</h2>
+          <p class="about-text">${prov.bio}</p>
+          <h2 style="margin-top:1.5rem">Services Offered</h2>
+          <div class="svc-list">${prov.services.map(s=>`
+            <div class="svc-item ${s.id===selectedSvc.id?'selected':''}" onclick="selectSvc('${s.id}')">
+              <div class="dot"></div>
+              <div><div class="svc-title">${s.name}</div><div class="svc-sub">${s.desc}</div></div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="section-card reviews-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h2 style="margin:0">Reviews</h2>
+            <span class="text-muted" style="font-size:.82rem">${reviews.length} reviews</span>
+          </div>
+          ${reviews.length?reviews.map(r=>`
+            <div class="review-card">
+              <div class="rev-header"><div class="rev-avatar">${r.customerName.charAt(0)}</div><div><div class="rev-name">${r.customerName}</div><div class="rev-date">${r.date}</div></div><div style="margin-left:auto" class="rev-stars">${'★'.repeat(r.rating)}</div></div>
+              <p class="rev-text">"${r.comment}"</p>
+            </div>`).join(''):'<p class="text-muted" style="font-size:.85rem">No reviews yet.</p>'}
+        </div>
+      </div>
+
+      <div>
+        <div class="section-card booking-card">
+          <h3>Book This Service</h3>
+          <p style="font-size:.85rem;font-weight:600;margin-bottom:.5rem">${selectedSvc.name}</p>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem">Select a time slot</p>
+          <div class="slot-grid">
+            ${['09:00 AM','11:00 AM','02:00 PM','04:00 PM'].map(t=>`<div class="slot ${t===selectedSlot?'active':''}" onclick="selectSlot('${t}')">${t}</div>`).join('')}
+          </div>
+          <div style="margin-top:1.25rem">
+            <div class="cost-row"><span>Service Fee</span><span>₹${selectedSvc.price}</span></div>
+            <div class="cost-row"><span>Duration</span><span>${selectedSvc.duration} min</span></div>
+            <div class="cost-row total"><span>Total Estimate</span><span>₹${selectedSvc.price}</span></div>
+          </div>
+          <a href="booking.html?pid=${prov.id}&sid=${selectedSvc.id}&slot=${encodeURIComponent(selectedSlot)}" class="btn btn-primary" style="width:100%;margin-top:1.25rem;text-align:center">Confirm Booking</a>
+          <p style="font-size:.72rem;color:var(--text-muted);text-align:center;margin-top:.5rem">You won't be charged yet</p>
+        </div>
+      </div>
+    </div>`;
+    feather.replace();
+  }
+
+  function selectSvc(id){selectedSvc=prov.services.find(s=>s.id===id);renderPage();}
+  function selectSlot(t){selectedSlot=t;renderPage();}
+  renderPage();
+</script>
+</body>
+</html>
