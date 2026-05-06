@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Services — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .page-header{margin-bottom:2rem}
+    .page-header h1{font-size:1.6rem;font-weight:700}
+    .filters-bar{display:flex;gap:.75rem;margin-bottom:2rem;flex-wrap:wrap;align-items:center}
+    .filters-bar input{flex:1;min-width:220px;padding:.75rem 1.1rem;border:1px solid var(--border-color);border-radius:999px;font-size:.88rem;outline:none;transition:var(--transition)}
+    .filters-bar input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+    .filters-bar select{padding:.65rem 1rem;border:1px solid var(--border-color);border-radius:var(--radius-md);font-size:.85rem;background:#fff;outline:none;cursor:pointer}
+    .cat-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+    .cat-tab{padding:.5rem 1.1rem;border-radius:999px;border:1px solid var(--border-color);font-size:.82rem;font-weight:500;cursor:pointer;transition:var(--transition);background:#fff}
+    .cat-tab:hover,.cat-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem}
+    .svc-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);overflow:hidden;transition:var(--transition)}
+    .svc-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);border-color:rgba(79,70,229,.2)}
+    .svc-card .card-top{padding:1.25rem 1.25rem .5rem;display:flex;gap:1rem;align-items:flex-start}
+    .svc-card .avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0}
+    .svc-card .prov-name{font-weight:700;font-size:.9rem}
+    .svc-card .prov-meta{font-size:.75rem;color:var(--text-muted);margin-top:.15rem}
+    .svc-card .badges{display:flex;gap:.4rem;margin-top:.35rem}
+    .svc-card .mini-badge{font-size:.65rem;padding:.15rem .5rem;border-radius:999px;font-weight:600}
+    .svc-card .card-body{padding:.5rem 1.25rem 1.25rem}
+    .svc-card .svc-name{font-weight:600;font-size:.88rem;margin-bottom:.25rem}
+    .svc-card .svc-desc{font-size:.8rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .svc-card .card-footer{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-top:1px solid var(--border-color)}
+    .svc-card .price{font-size:1rem;font-weight:700;color:var(--primary)}
+    .svc-card .price span{font-weight:400;color:var(--text-muted);font-size:.75rem}
+    .results-count{font-size:.85rem;color:var(--text-muted);margin-bottom:1rem}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Customer</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item active"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444" onclick="SS.logout()"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header"><h1>Discover Services</h1><p class="text-muted" style="font-size:.88rem">Browse verified professionals near you</p></div>
+
+    <div class="filters-bar">
+      <input type="text" placeholder="Search services, providers..." id="searchInput" oninput="render()">
+      <select id="sortSelect" onchange="render()"><option value="rating">Top Rated</option><option value="price-low">Price: Low → High</option><option value="price-high">Price: High → Low</option></select>
+      <select id="citySelect" onchange="render()"><option value="">All Cities</option></select>
+    </div>
+
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="results-count" id="resultCount"></div>
+    <div class="svc-grid" id="svcGrid"></div>
+  </main>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script>AuthGuard.require('customer');</script>
+<script>
+  let activeCat='';
+  
+  async function initServices() {
+    try {
+      // Populate categories
+      const cats = await SS.getCategories();
+      document.getElementById('catTabs').innerHTML='<div class="cat-tab active" onclick="setCat(this,\'\')">All</div>'+cats.map(c=>`<div class="cat-tab" onclick="setCat(this,'${c}')">${c}</div>`).join('');
+
+      // Populate cities from providers' location field
+      const providers = await SS.getProviders();
+      const cities = [...new Set(providers.map(p => p.location).filter(Boolean))];
+      document.getElementById('citySelect').innerHTML = '<option value="">All Cities</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
+      
+      await render();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function setCat(el,cat){document.querySelectorAll('.cat-tab').forEach(c=>c.classList.remove('active'));el.classList.add('active');activeCat=cat;render();}
+
+  async function render(){
+    try {
+      const q=(document.getElementById('searchInput').value||'').toLowerCase();
+      const sort=document.getElementById('sortSelect').value;
+      const city=document.getElementById('citySelect').value;
+      
+      let svcs = await SS.getAllServices();
+      
+      if(activeCat) svcs = svcs.filter(s => s.category === activeCat);
+      if(city) svcs = svcs.filter(s => s.providerId?.location === city);
+      if(q) svcs = svcs.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q) ||
+        (s.providerId?.firstName||'').toLowerCase().includes(q) ||
+        (s.providerId?.lastName||'').toLowerCase().includes(q)
+      );
+      
+      if(sort==='rating')svcs.sort((a,b)=>(b.rating||b.providerId?.rating||0)-(a.rating||a.providerId?.rating||0));
+      else if(sort==='price-low')svcs.sort((a,b)=>a.price-b.price);
+      else if(sort==='price-high')svcs.sort((a,b)=>b.price-a.price);
+
+      document.getElementById('resultCount').textContent=`${svcs.length} service${svcs.length!==1?'s':''} found`;
+      document.getElementById('svcGrid').innerHTML=svcs.map(s=>`
+        <div class="svc-card">
+          <div class="card-top">
+            <img src="${s.providerId?.profilePic || 'https://via.placeholder.com/52'}" class="avatar" alt="${s.providerId?.firstName}">
+            <div>
+            <div class="prov-name">${s.providerId?.firstName || 'Unknown'} ${s.providerId?.lastName || ''}</div>
+              <div class="prov-meta">${s.category} · ${s.providerId?.location || 'Local'}</div>
+              <div class="badges"><span class="mini-badge badge-green">★ ${s.rating || s.providerId?.rating || 0}</span><span class="mini-badge badge-blue">Verified</span></div>
+            </div>
+          </div>
+          <div class="card-body"><div class="svc-name">${s.title}</div><div class="svc-desc">${s.description}</div></div>
+          <div class="card-footer">
+            <div class="price">₹${s.price} <span></span></div>
+            <a href="provider-profile.html?id=${s.providerId?._id}" class="btn btn-primary" style="padding:.45rem 1rem;font-size:.8rem">View & Book</a>
+          </div>
+        </div>`).join('')||'<p class="text-muted">No services match your search.</p>';
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  
+  initServices();
+</script>
+</body>
+</html>

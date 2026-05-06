@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Service — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .add-wrap{max-width:600px}
+    .add-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:2rem}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Provider</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-provider.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="manage-services.html" class="sidebar-item active"><i data-feather="briefcase" style="width:18px"></i> My Services</a>
+      <a href="active-job.html" class="sidebar-item"><i data-feather="zap" style="width:18px"></i> Active Jobs</a>
+      <a href="chat-provider.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+      <a href="earnings.html" class="sidebar-item"><i data-feather="dollar-sign" style="width:18px"></i> Earnings</a>
+      <a href="profile-provider.html" class="sidebar-item"><i data-feather="user" style="width:18px"></i> My Profile</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <a href="manage-services.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--text-muted);margin-bottom:1rem"><i data-feather="arrow-left" style="width:16px"></i> Back to services</a>
+    <div class="add-wrap">
+      <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:.3rem">Add New Service</h1>
+      <p class="text-muted" style="font-size:.85rem;margin-bottom:2rem">This will be visible to customers immediately</p>
+      <div class="add-card">
+        <form id="addServiceForm" onsubmit="addService(event)">
+          <div class="form-group">
+            <label class="form-label">Service Title</label>
+            <input type="text" class="form-input" id="sTitle" placeholder="e.g. AC Gas Refill" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-input" id="sCategory" required>
+              <option value="">Select a category</option>
+              <option value="Cleaning">Cleaning</option>
+              <option value="Plumbing">Plumbing</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Appliance Repair">Appliance Repair</option>
+              <option value="Pest Control">Pest Control</option>
+              <option value="Painting">Painting</option>
+              <option value="Carpentry">Carpentry</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-input" id="sDesc" placeholder="Describe what this service includes..." required></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Price (₹)</label><input type="number" class="form-input" id="sPrice" placeholder="500" required></div>
+            <div class="form-group"><label class="form-label">Estimated Duration (minutes)</label><input type="number" class="form-input" id="sDur" placeholder="60" required></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Image</label>
+            <input type="file" class="form-input" id="sImage" accept="image/*" required style="padding: .5rem">
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:1.5rem">
+            <a href="manage-services.html" class="btn btn-outline" style="flex:1;text-align:center">Cancel</a>
+            <button type="submit" id="addBtn" class="btn btn-primary" style="flex:2">Add Service</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+<script>feather.replace();</script>
+<script src="js/data.js"></script>
+<script>
+  AuthGuard.require('provider');
+
+  async function addService(e){
+    e.preventDefault();
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+
+    const formData = new FormData();
+    formData.append('title', document.getElementById('sTitle').value);
+    formData.append('category', document.getElementById('sCategory').value);
+    formData.append('description', document.getElementById('sDesc').value);
+    formData.append('price', document.getElementById('sPrice').value);
+    
+    const imageFile = document.getElementById('sImage').files[0];
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    try {
+      await SS.createService(formData);
+      alert('Service added! It is now visible to customers.');
+      window.location.href = 'dashboard-provider.html'; // Let's go to dashboard for now
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add service: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Add Service';
+    }
+  }
+</script>
+</body>
+</html>

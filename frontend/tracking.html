@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Tracking — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    .track-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:2rem}
+    .map-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);overflow:hidden;min-height:340px;position:relative}
+    .map-placeholder{width:100%;height:100%;background:linear-gradient(135deg,#e0e7ff,#f1f5f9);display:flex;align-items:center;justify-content:center;color:var(--text-muted);flex-direction:column;gap:.5rem;min-height:340px}
+    .info-panel{display:flex;flex-direction:column;gap:1.25rem}
+    .panel-card{background:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.5rem}
+    .panel-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem}
+    /* Milestone timeline */
+    .status-timeline{position:relative;padding-left:1.75rem}
+    .status-timeline::before{content:'';position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--border-color)}
+    .tl-step{position:relative;margin-bottom:1.25rem;font-size:.85rem}
+    .tl-step:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-1.75rem;top:2px;width:16px;height:16px;border-radius:50%;border:2px solid var(--border-color);background:#fff}
+    .tl-step.done .tl-dot{background:var(--primary);border-color:var(--primary)}
+    .tl-step.active .tl-dot{background:#fff;border-color:var(--primary);box-shadow:0 0 0 4px rgba(79,70,229,.15);animation:pulse 1.4s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(79,70,229,.15)}50%{box-shadow:0 0 0 8px rgba(79,70,229,.05)}}
+    .tl-step .tl-label{font-weight:600}
+    .tl-step .tl-time{font-size:.72rem;color:var(--text-muted);margin-top:.1rem}
+    /* Timers */
+    .timer-card{text-align:center;padding:1.75rem}
+    .timer-display{font-size:2.5rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--primary);margin:.5rem 0}
+    .timer-label{font-size:.8rem;color:var(--text-muted)}
+    .prov-info{display:flex;align-items:center;gap:1rem}
+    .prov-info img{width:48px;height:48px;border-radius:50%;object-fit:cover}
+    .prov-info .name{font-weight:700;font-size:.9rem}
+    .prov-info .meta{font-size:.78rem;color:var(--text-muted)}
+    .action-row{display:flex;gap:.75rem;margin-top:1rem}
+    /* Confirm arrival banner */
+    .arrival-confirm{background:#fef9c3;border:1px solid #fde68a;border-radius:var(--radius-md);padding:.85rem 1rem;font-size:.83rem;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:1rem}
+    /* SOS */
+    .sos-btn{background:#ef4444;color:#fff;border:none;border-radius:var(--radius-md);padding:.65rem 1.25rem;font-weight:700;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:var(--transition)}
+    .sos-btn:hover{background:#dc2626;transform:scale(1.03)}
+    .sos-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center}
+    .sos-modal.show{display:flex}
+    .sos-box{background:#fff;border-radius:var(--radius-xl);padding:2.5rem;text-align:center;max-width:380px;border:3px solid #ef4444}
+    @media(max-width:768px){.track-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <nav class="sidebar-menu">
+      <a href="dashboard-customer.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="services.html" class="sidebar-item"><i data-feather="search" style="width:18px"></i> Find Services</a>
+      <a href="history.html" class="sidebar-item active"><i data-feather="clock" style="width:18px"></i> My Bookings</a>
+      <a href="chat-customer.html" class="sidebar-item"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444" onclick="SS.logout()"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content" id="main"></main>
+</div>
+
+<!-- SOS Modal -->
+<div class="sos-modal" id="sosModal">
+  <div class="sos-box">
+    <div style="width:64px;height:64px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+      <i data-feather="alert-octagon" style="width:32px;height:32px;color:#ef4444"></i>
+    </div>
+    <h2 style="font-size:1.15rem;font-weight:700;margin-bottom:.5rem">Send SOS Alert?</h2>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1.5rem">This will notify the Service Sphere admin team immediately. Use only in emergencies.</p>
+    <textarea id="sosMsg" style="width:100%;padding:.75rem;border:1px solid var(--border-color);border-radius:var(--radius-md);font-family:inherit;font-size:.85rem;margin-bottom:1rem;resize:none;height:80px" placeholder="Describe the situation…"></textarea>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-outline" style="flex:1" onclick="closeSOS()">Cancel</button>
+      <button class="btn" style="flex:1;background:#ef4444;color:#fff;font-weight:700" onclick="confirmSOS()">🚨 Send SOS</button>
+    </div>
+  </div>
+</div>
+
+<!-- Safety Alert Modal -->
+<div class="sos-modal" id="safetyModal">
+  <div class="sos-box" style="border-color:#f97316">
+    <div style="font-size:2rem;margin-bottom:.5rem">⚠️</div>
+    <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem">Service Taking Longer Than Expected</h2>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1.5rem">Are you safe?</p>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-outline" style="flex:1" onclick="markSafe()">✓ Yes, I'm Safe</button>
+      <button class="btn" style="flex:1;background:#ef4444;color:#fff" onclick="markUnsafe()">⚠ Report Issue</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script>AuthGuard.require('customer');</script>
+<script>
+  AuthGuard.require('customer');
+  const bid = new URLSearchParams(location.search).get('id');
+  const user = SS.getUser();
+  
+  let booking = null;
+  let safetyShown = false;
+
+  const MILESTONE_META = {
+    accepted:      { emoji:'✅', label:'Booking Accepted'    },
+    started_travel:{ emoji:'🛵', label:'Provider On The Way' },
+    arrived:       { emoji:'📍', label:'Provider Arrived'    },
+    active:        { emoji:'🛠️', label:'Work In Progress'   },
+    completed:     { emoji:'🎉', label:'Completed'           }
+  };
+  const MILESTONES = ['accepted', 'started_travel', 'arrived', 'active', 'completed'];
+
+  async function renderPage() {
+    try {
+      const allBookings = await SS.getBookings();
+      booking = allBookings.find(b => b._id === bid);
+      if (!booking) { 
+        document.getElementById('main').innerHTML='<p>Booking not found. <a href="history.html">Go back</a></p>'; 
+        return; 
+      }
+
+      const prov = booking.providerId;
+      const svc  = booking.serviceId || { title:'Service', price:0 };
+      const tracking = booking.tracking || [];
+      
+      // build a milestones dictionary mapping status to timestamp
+      const m = {};
+      tracking.forEach(t => {
+        m[t.status] = t.timestamp;
+      });
+
+      // Determine current and next milestone
+      const doneCount = MILESTONES.filter(k => m[k]).length;
+      const isCompleted = booking.status === 'completed';
+
+      // ETA countdown if on the way
+      let timerBlock = '';
+      if (m.started_travel && !m.arrived) {
+        const travelStart = new Date(m.started_travel).getTime();
+        const remaining = Math.max((15) * 60 * 1000 - (Date.now() - travelStart), 0);
+        timerBlock = `<div class="panel-card timer-card">
+          <div class="timer-label">⏱ Estimated Arrival</div>
+          <div class="timer-display" id="eta-display">${fmtMs(remaining)}</div>
+          <div class="timer-label">Provider is on the way</div>
+          <div style="margin-top:.75rem"><span class="badge badge-yellow">● On The Way</span></div>
+        </div>`;
+      } else if (m.active && !isCompleted) {
+        const elapsed = Date.now() - new Date(m.active).getTime();
+        timerBlock = `<div class="panel-card timer-card">
+          <div class="timer-label">🛠️ Work Timer</div>
+          <div class="timer-display" id="work-display" style="color:#10b981">${fmtMs(elapsed, true)}</div>
+          <div class="timer-label">Expected: ~60 min</div>
+          <div style="margin-top:.75rem"><span class="badge badge-green" id="safetyBadge">● Safe</span></div>
+        </div>`;
+      } else if (isCompleted) {
+        timerBlock = `<div class="panel-card timer-card">
+          <div style="font-size:2rem;margin-bottom:.5rem">🎉</div>
+          <div style="font-weight:700">Service Complete!</div>
+          <div class="timer-label" style="margin-top:.5rem">Thank you for using Service Sphere</div>
+        </div>`;
+      } else {
+        timerBlock = `<div class="panel-card timer-card">
+          <div class="timer-label">Status</div>
+          <div style="font-size:1.2rem;font-weight:700;margin:.5rem 0">Booking ${booking.status}</div>
+          <div class="timer-label">Awaiting provider update</div>
+        </div>`;
+      }
+
+      // Build milestone timeline
+      const tlHtml = MILESTONES.map((k, i) => {
+        const done = !!m[k];
+        const isActive = !done && i === doneCount;
+        const ts = m[k] ? new Date(m[k]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        const meta = MILESTONE_META[k];
+        return `<div class="tl-step ${done ? 'done' : isActive ? 'active' : ''}">
+          <div class="tl-dot"></div>
+          <div class="tl-label">${meta.emoji} ${meta.label}</div>
+          <div class="tl-time">${done ? ts : isActive ? 'In progress…' : '—'}</div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('main').innerHTML = `
+        <a href="history.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--text-muted);margin-bottom:1rem"><i data-feather="arrow-left" style="width:16px"></i> Back to bookings</a>
+        <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:.3rem">Live Tracking</h1>
+        <p class="text-muted" style="font-size:.85rem;margin-bottom:2rem">Booking with ${prov?.firstName} · ${svc.title}</p>
+        <div class="track-grid">
+          <div>
+            <div class="map-card"><div class="map-placeholder"><i data-feather="map" style="width:48px;height:48px"></i><span>Live map view</span></div></div>
+            <div class="action-row">
+              <a href="chat-customer.html?bid=${bid}" class="btn btn-outline" style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:.4rem"><i data-feather="message-circle" style="width:16px"></i> Message</a>
+              <button class="sos-btn" onclick="openSOS()"><i data-feather="alert-octagon" style="width:16px"></i> SOS</button>
+              ${!isCompleted
+                ? `<button class="btn btn-primary" style="flex:1" onclick="completeJob()">Complete &amp; Pay — ₹${booking.amount}</button>`
+                : `<a href="feedback.html?bid=${bid}" class="btn btn-primary" style="flex:1;text-align:center">Leave Review</a>`}
+            </div>
+          </div>
+          <div class="info-panel">
+            ${timerBlock}
+            <div class="panel-card">
+              <h3>Provider</h3>
+              <div class="prov-info">
+                <img src="${prov?.profilePic || 'https://via.placeholder.com/48'}" alt="">
+                <div><div class="name">${prov?.firstName} ${prov?.lastName}</div><div class="meta">${prov?.city || ''}</div></div>
+              </div>
+            </div>
+            <div class="panel-card">
+              <h3>Journey Status</h3>
+              <div class="status-timeline">${tlHtml}</div>
+            </div>
+          </div>
+        </div>`;
+      feather.replace();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function fmtMs(ms, up) {
+    const totSec = Math.floor(ms / 1000);
+    const m = Math.floor(totSec / 60);
+    const s = totSec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // Live tick for timers
+  setInterval(async () => {
+    if (!booking) return;
+    const tracking = booking.tracking || [];
+    const m = {};
+    tracking.forEach(t => { m[t.status] = t.timestamp; });
+
+    // ETA countdown
+    if (m.started_travel && !m.arrived) {
+      const el = document.getElementById('eta-display');
+      if (el) {
+        const remaining = Math.max(15 * 60 * 1000 - (Date.now() - new Date(m.started_travel).getTime()), 0);
+        el.textContent = fmtMs(remaining);
+      }
+    }
+    // Work timer
+    if (m.active && booking.status !== 'completed') {
+      const el = document.getElementById('work-display');
+      if (el) el.textContent = fmtMs(Date.now() - new Date(m.active).getTime(), true);
+
+      // Safety check — if exceeded expected duration
+      const expectedMs = 60 * 60 * 1000;
+      const elapsed = Date.now() - new Date(m.active).getTime();
+      if (elapsed > expectedMs && !safetyShown) {
+        safetyShown = true;
+        document.getElementById('safetyModal').classList.add('show');
+        const badge = document.getElementById('safetyBadge');
+        if (badge) { badge.className = 'badge badge-yellow'; badge.textContent = '⚠ Alert'; }
+      }
+    }
+  }, 1000);
+
+  // Poll for updates (since we haven't hooked up socket yet for tracking updates)
+  setInterval(renderPage, 5000);
+
+  async function completeJob() {
+    if (confirm('Mark this job as completed?')) {
+      try {
+        await SS.updateBookingStatus(bid, 'completed');
+        renderPage();
+      } catch (err) {
+        alert('Failed to update status');
+      }
+    }
+  }
+
+  function openSOS() { document.getElementById('sosModal').classList.add('show'); }
+  function closeSOS() { document.getElementById('sosModal').classList.remove('show'); }
+  function confirmSOS() {
+    closeSOS();
+    alert('🚨 SOS alert sent to Service Sphere admin team. Help is on the way.');
+  }
+  function markSafe()   { document.getElementById('safetyModal').classList.remove('show'); }
+  function markUnsafe() { document.getElementById('safetyModal').classList.remove('show'); alert('Issue reported.'); }
+
+  renderPage();
+</script>
+</body>
+</html>

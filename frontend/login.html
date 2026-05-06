@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ── OTP ────────────────────────────────────────────────── */
+    .otp-row{display:flex;gap:.75rem;justify-content:center;margin:1.5rem 0}
+    .otp-input{width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:700;
+      border:2px solid var(--border-color);border-radius:var(--radius-md);outline:none;
+      transition:border-color .2s,box-shadow .2s,transform .15s}
+    .otp-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.12);transform:scale(1.06)}
+    .otp-input.filled{border-color:var(--primary);background:rgba(79,70,229,.04)}
+    .otp-input.error-cell{border-color:#ef4444;animation:cellShake .3s ease}
+    @keyframes cellShake{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
+
+    /* ── Step transition ────────────────────────────────────── */
+    .step{display:none;animation:fadeUp .3s ease both}
+    .step.active{display:block}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── Misc ───────────────────────────────────────────────── */
+    .divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:var(--text-muted);font-size:.82rem}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border-color)}
+    .resend{font-size:.82rem;color:var(--text-muted);margin-top:.75rem;text-align:center}
+    .resend a{color:var(--primary);font-weight:600;cursor:pointer}
+    .auth-visual-content h2{font-size:2rem;font-weight:700;margin-bottom:1rem}
+    .auth-visual-content p{opacity:.85;line-height:1.6}
+    .auth-visual-content .feature-list{margin-top:2rem;text-align:left}
+    .auth-visual-content .feature-list li{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;font-size:.9rem}
+    .auth-visual-content .feature-list li i{opacity:.7}
+    .trust-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.15);padding:.35rem .85rem;border-radius:999px;font-size:.75rem;margin-bottom:1.5rem}
+    .role-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(79,70,229,.08);color:var(--primary);padding:.35rem 1rem;border-radius:999px;font-size:.8rem;font-weight:600;margin-bottom:1.5rem}
+
+    /* ── Countdown ──────────────────────────────────────────── */
+    #countdown{font-size:.78rem;color:var(--text-muted);margin-top:.5rem}
+    #countdown span{color:var(--primary);font-weight:600}
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    #toast{position:fixed;top:1.5rem;right:1.5rem;z-index:9999;display:flex;align-items:center;gap:.75rem;
+      background:#fff;color:#111;padding:.85rem 1.25rem;border-radius:12px;
+      box-shadow:0 8px 30px rgba(0,0,0,.15);font-size:.88rem;font-weight:500;
+      transform:translateX(120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);min-width:260px}
+    #toast.show{transform:translateX(0)}
+    #toast.success{border-left:4px solid #22c55e}
+    #toast.error{border-left:4px solid #ef4444}
+    #toast.info{border-left:4px solid #3b82f6}
+    #toast .t-icon{width:20px;height:20px;flex-shrink:0}
+    #toast.success .t-icon{color:#22c55e}
+    #toast.error .t-icon{color:#ef4444}
+    #toast.info .t-icon{color:#3b82f6}
+
+    /* ── Loading Button ─────────────────────────────────────── */
+    .btn-loading{position:relative;pointer-events:none;opacity:.85}
+    .btn-loading::after{content:'';position:absolute;right:1rem;top:50%;transform:translateY(-50%);
+      width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+      border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+
+    /* ── Success overlay ────────────────────────────────────── */
+    #successOverlay{position:fixed;inset:0;background:rgba(255,255,255,.96);z-index:9998;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+      opacity:0;pointer-events:none;transition:opacity .4s}
+    #successOverlay.show{opacity:1;pointer-events:all}
+    .success-ring{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);
+      display:flex;align-items:center;justify-content:center;
+      animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
+    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+    #successOverlay h3{font-size:1.4rem;font-weight:700;color:#111}
+    #successOverlay p{color:#666;font-size:.9rem}
+
+    /* ── OTP sent banner ────────────────────────────────────── */
+    .otp-sent-banner{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);
+      border-radius:10px;padding:.65rem 1rem;font-size:.82rem;color:#15803d;
+      display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast">
+  <svg class="t-icon" id="toastIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- Success Overlay -->
+<div id="successOverlay">
+  <div class="success-ring">
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  </div>
+  <h3 id="overlayTitle">Verified!</h3>
+  <p id="overlayDesc">Taking you to your dashboard…</p>
+</div>
+
+<div class="auth-container">
+  <!-- Left visual (dynamic based on role) -->
+  <div class="auth-visual">
+    <div class="auth-visual-content">
+      <div class="trust-badge"><i data-feather="shield" style="width:14px;height:14px"></i> Secure &amp; Verified</div>
+      <h2 id="panel-title">Welcome back to<br>Service Sphere</h2>
+      <p id="panel-desc">Sign in to manage your bookings, track services, and connect with trusted professionals.</p>
+      <ul class="feature-list">
+        <li><i data-feather="check-circle" style="width:18px;height:18px"></i> OTP-based secure authentication</li>
+        <li><i data-feather="zap" style="width:18px;height:18px"></i> Instant access to your dashboard</li>
+        <li><i data-feather="lock" style="width:18px;height:18px"></i> Your data is always encrypted</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right form -->
+  <div class="auth-form-area">
+    <div class="auth-box">
+      <a href="index.html" class="text-gradient font-bold" style="font-size:1.3rem;display:block;margin-bottom:.3rem">Service Sphere</a>
+
+      <!-- Role pill -->
+      <div class="role-pill" id="rolePill" style="display:none">
+        <i data-feather="user" style="width:14px;height:14px"></i>
+        <span id="roleLabel">Customer</span>
+      </div>
+
+      <p class="text-muted" style="font-size:.85rem;margin-bottom:2rem" id="formSubtitle">Sign in to your account</p>
+
+      <!-- Step 1: Phone -->
+      <div class="step active" id="step-phone">
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" class="form-input" value="+91" style="width:60px;text-align:center" readonly>
+            <input type="tel" id="phone" class="form-input" placeholder="Enter your 10-digit number" maxlength="10" style="flex:1" oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;margin-top:.5rem" id="sendOtpBtn" onclick="sendOTP()">
+          Send OTP
+        </button>
+        <div class="divider">or</div>
+        <p style="text-align:center;font-size:.85rem;color:var(--text-muted)">
+          New here? <a href="register.html" id="registerLink" style="color:var(--primary);font-weight:600">Create Account</a>
+        </p>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div class="step" id="step-otp">
+        <div class="otp-sent-banner" id="otpBanner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.08 3.4 2 2 0 0 1 3.05 1.2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16z"></path></svg>
+          OTP sent to <strong id="display-phone" style="margin-left:.2rem"></strong>
+          &nbsp;·&nbsp; Use <strong>123456</strong> for demo
+        </div>
+
+        <p style="font-size:.9rem;margin-bottom:.25rem;font-weight:600">Enter verification code</p>
+        <p class="text-muted" style="font-size:.82rem;margin-bottom:.25rem">6-digit code sent to your phone</p>
+
+        <div class="otp-row" id="otpRow">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="0">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="1">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="2">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="3">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="4">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-idx="5">
+        </div>
+
+        <button type="button" class="btn btn-primary" style="width:100%" id="verifyBtn" onclick="verifyOTP()">
+          Verify &amp; Continue
+        </button>
+
+        <div class="resend" style="margin-top:1rem">
+          <div id="countdown"></div>
+          <div id="resendLink" style="display:none">Didn't receive it? <a onclick="resendOTP()">Resend OTP</a></div>
+        </div>
+
+        <div style="margin-top:1rem;text-align:center">
+          <a onclick="goBack()" style="font-size:.82rem;color:var(--text-muted);cursor:pointer;text-decoration:underline">← Change Number</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <input type="text" id="otp" placeholder="Enter OTP">
+  <button onclick="verifyOTP()">Verify OTP</button>
+</div>
+
+<script>feather.replace();</script>
+<script src="js/data.js"></script>
+<!-- ONLY showing SCRIPT part (your HTML & CSS are already correct) -->
+
+<script>
+/* ── SAFE USER STORAGE (fallback if SS not loaded) ─────────── */
+const SS_SAFE = window.SS || {
+  setUser: (u) => localStorage.setItem("ss_user", JSON.stringify(u)),
+  getUser: () => JSON.parse(localStorage.getItem("ss_user"))
+};
+
+/* ── Role Detection ───────────────────────────────────────── */
+const params = new URLSearchParams(location.search);
+const role = params.get('role') || localStorage.getItem('ss_pending_role') || 'customer';
+localStorage.setItem('ss_pending_role', role);
+
+/* ── Redirect if already logged in ───────────────────────── */
+const existing = SS_SAFE.getUser();
+if (existing && existing.phone) {
+  window.location.href =
+    existing.role === 'provider'
+      ? 'dashboard-provider.html'
+      : 'dashboard-customer.html';
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.className = type, 3000);
+}
+
+/* ── Countdown ──────────────────────────────────────────── */
+let countdownInterval;
+function startCountdown(sec = 30) {
+  document.getElementById('resendLink').style.display = 'none';
+  const el = document.getElementById('countdown');
+
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    el.innerHTML = sec > 0 ? `Resend in <span>${sec}s</span>` : '';
+    if (sec <= 0) {
+      clearInterval(countdownInterval);
+      document.getElementById('resendLink').style.display = 'block';
+    }
+    sec--;
+  }, 1000);
+}
+
+/* ── OTP INPUT HANDLING ─────────────────────────────────── */
+const otpInputs = document.querySelectorAll('.otp-input');
+
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '');
+    if (inp.value && i < otpInputs.length - 1) {
+      otpInputs[i + 1].focus();
+    }
+
+    if ([...otpInputs].every(x => x.value)) {
+      verifyOTP();
+    }
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && i > 0) {
+      otpInputs[i - 1].focus();
+    }
+  });
+});
+
+/* ── SEND OTP ───────────────────────────────────────────── */
+
+async function sendOTP() {
+  const ph = document.getElementById('phone').value.trim();
+
+  if (!/^\d{10}$/.test(ph)) {
+    showToast("Enter valid 10-digit phone", "error");
+    return;
+  }
+
+  const btn = document.getElementById('sendOtpBtn');
+  btn.classList.add('btn-loading');
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch("http://localhost:5000/api/send-otp", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ phone: ph })
+    });
+
+    const data = await res.json();
+    console.log("OTP:", data);
+
+    // ✅ SWITCH UI (THIS WAS MISSING)
+    document.getElementById('display-phone').textContent = '+91 ' + ph;
+    document.getElementById('step-phone').classList.remove('active');
+    document.getElementById('step-otp').classList.add('active');
+
+    showToast("OTP sent (check terminal)", "success");
+
+    startCountdown();
+
+  } catch (err) {
+    console.error(err);
+
+    // fallback for testing
+    document.getElementById('display-phone').textContent = '+91 ' + ph;
+    document.getElementById('step-phone').classList.remove('active');
+    document.getElementById('step-otp').classList.add('active');
+
+    showToast("Using demo OTP: 123456", "info");
+  } finally {
+    btn.classList.remove('btn-loading');
+    btn.textContent = 'Send OTP';
+  }
+}
+</script>
+</body>
+</html>

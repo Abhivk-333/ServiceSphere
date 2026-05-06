@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — Service Sphere</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <a href="index.html" class="navbar-brand text-gradient" style="font-size:1.25rem">Service Sphere</a>
+    <p style="font-size:.65rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:.15rem">Provider</p>
+    <nav class="sidebar-menu">
+      <a href="dashboard-provider.html" class="sidebar-item"><i data-feather="home" style="width:18px"></i> Overview</a>
+      <a href="manage-services.html" class="sidebar-item"><i data-feather="briefcase" style="width:18px"></i> My Services</a>
+      <a href="active-job.html" class="sidebar-item"><i data-feather="zap" style="width:18px"></i> Active Jobs</a>
+      <a href="chat-provider.html" class="sidebar-item active"><i data-feather="message-circle" style="width:18px"></i> Messages</a>
+      <a href="earnings.html" class="sidebar-item"><i data-feather="dollar-sign" style="width:18px"></i> Earnings</a>
+      <a href="profile-provider.html" class="sidebar-item"><i data-feather="user" style="width:18px"></i> My Profile</a>
+    </nav>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border-color)">
+      <a href="index.html" class="sidebar-item" style="color:#ef4444"><i data-feather="log-out" style="width:18px"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem">Messages</h1>
+    <div class="chat-container">
+      <div class="chat-header" id="chatHeader"></div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="chat-send-btn" onclick="sendMsg()"><i data-feather="send" style="width:18px"></i></button>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  AuthGuard.require('provider');
+  const bid = new URLSearchParams(location.search).get('bid');
+  const user = SS.getUser();
+  let booking = null;
+  let socket = null;
+
+  async function initChat() {
+    try {
+      if (!bid) {
+        document.getElementById('chatMessages').innerHTML = '<p style="text-align:center;color:var(--text-muted);margin-top:2rem;">Please select a booking to chat.</p>';
+        return;
+      }
+      booking = await SS.getBooking(bid);
+      const cust = booking.customerId;
+
+      document.getElementById('chatHeader').innerHTML=`
+        <img src="${cust?.profilePic || 'https://via.placeholder.com/48'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" alt="">
+        <div><div style="font-weight:600;font-size:.9rem">${cust?.firstName} ${cust?.lastName}</div><div style="font-size:.75rem;color:var(--text-muted)">Customer</div></div>
+        <span class="badge badge-green" style="margin-left:auto;font-size:.7rem">● Connected</span>`;
+
+      // Load initial messages
+      const messages = await SS.getMessages(bid);
+      const el = document.getElementById('chatMessages');
+      
+      if (!messages.length) {
+        el.innerHTML = '<p style="text-align:center;color:var(--text-muted);margin-top:2rem;font-size:.85rem" id="emptyMsg">No messages yet. Start the conversation!</p>';
+      } else {
+        el.innerHTML = messages.map(m => createMsgHtml(m)).join('');
+        el.scrollTop = el.scrollHeight;
+      }
+
+      // Initialize Socket.io
+      socket = io('http://localhost:5000');
+      socket.emit('join_room', bid);
+
+      socket.on('receive_message', (msg) => {
+        const emptyMsg = document.getElementById('emptyMsg');
+        if (emptyMsg) emptyMsg.remove();
+        
+        el.insertAdjacentHTML('beforeend', createMsgHtml(msg));
+        el.scrollTop = el.scrollHeight;
+      });
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('chatMessages').innerHTML = `<p style="color:#ef4444;text-align:center;padding:2rem">${err.message}</p>`;
+    }
+  }
+
+  function createMsgHtml(m) {
+    const isMe = m.senderId === user.id;
+    const time = new Date(m.createdAt || Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    return `<div class="chat-message ${isMe ? 'sent' : 'received'}"><div>${m.text}</div><div style="font-size:.65rem;opacity:.6;margin-top:.3rem;text-align:right">${time}</div></div>`;
+  }
+
+  function sendMsg() {
+    const inp = document.getElementById('msgInput');
+    const text = inp.value.trim();
+    if (!text || !socket) return;
+    
+    const msgData = {
+      room: bid,
+      bookingId: bid,
+      senderId: user.id,
+      receiverId: booking.customerId._id,
+      text: text,
+      createdAt: new Date().toISOString()
+    };
+
+    // Emit to server
+    socket.emit('send_message', msgData);
+
+    // Optimistically render
+    const el = document.getElementById('chatMessages');
+    const emptyMsg = document.getElementById('emptyMsg');
+    if (emptyMsg) emptyMsg.remove();
+
+    el.insertAdjacentHTML('beforeend', createMsgHtml(msgData));
+    el.scrollTop = el.scrollHeight;
+    
+    inp.value = '';
+  }
+
+  initChat();
+  feather.replace();
+</script>
+</body>
+</html>
